@@ -4,19 +4,18 @@ Minimize memory usage by processing each row as soon as possible, instead of try
 
 This does not have write functionality.
 
-## Use
-
 ## Quick start
 
 npm install xlsx-json-stream
 
 ````
-const xlsxFile = require('xlsx-json-stream');
+const ExcelStreamer = require('xlsx-json-stream');
 
 
 main = async () => {
-    await ExcelStreamer('Spreadsheet.xlsx', (obj, rowCtr, sheetName, headerLength, dataLength) => {
+    await ExcelStreamer.readToJson('Spreadsheet.xlsx', (obj, rowCtr, sheetName, headerLength, dataLength) => {
         console.log(obj, rowCtr, dataLength, headerLength, obj, sheetName);
+        // ToDo: add your transform and load steps for each Excel row here
     });
     console.log("** Done **");
 }
@@ -51,6 +50,7 @@ let options = {
 main = async () => {
     await ExcelStreamer.readToJson(filename, options, (obj, rowCtr, sheetName, headerLength, dataLength) => {
         console.log(obj, rowCtr, sheetName, dataLength, headerLength);
+        // ToDo: add your transform and load steps for each Excel row here
     });
     console.log("** Done **");
 }
