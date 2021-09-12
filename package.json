@@ -1,0 +1,29 @@
+{
+  "name": "xlsx-row-stream",
+  "version": "0.1.0",
+  "description": "A memory friendly JSON row streamer for Excel (XLSX) files",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oscaryu/xlsx-json-stream.git"
+  },
+  "keywords": [
+    "excel",
+    "xlsx",
+    "stream",
+    "json",
+    "read-excel-file"
+  ],
+  "author": "Oscar Yu",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/oscaryu/xlsx-json-stream/issues"
+  },
+  "homepage": "https://github.com/oscaryu/xlsx-json-stream#readme",
+  "dependencies": {
+    "read-excel-file": "^5.2.10"
+  }
+}
