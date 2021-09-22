@@ -13,8 +13,8 @@ const ExcelStreamer = require('xlsx-json-stream');
 
 
 main = async () => {
-    await ExcelStreamer.readToJson('Spreadsheet.xlsx', (obj, rowCtr, sheetName, headerLength, dataLength) => {
-        console.log(obj, rowCtr, dataLength, headerLength, obj, sheetName);
+    await ExcelStreamer.readToJson('Spreadsheet.xlsx', (err, data) => {
+        console.log(data.row, data.rowCtr, data.dataLength, data.headerLength, data.sheetName);
         // ToDo: add your transform and load steps for each Excel row here
     });
     console.log("** Done **");
@@ -32,6 +32,8 @@ main()
 - INCLUDE_EMPTY = false;
 - SHEETS = [];
 - ASYNC_BATCH_SIZE = 1;
+- READ_OPTIONS = { dateFormat: 'm/d/yy;@' }; // Default date format is mm/dd/yyyy
+
 
 
 ````
@@ -44,12 +46,13 @@ let options = {
   DATA_START_ROW:1,
   INCLUDE_EMPTY:false,
   SHEETS:['USA','MEX'],
-  ASYNC_BATCH_SIZE:1
+  ASYNC_BATCH_SIZE:1,
+  READ_OPTIONS : {dateFormat: 'm/d/yy;@' }; // default format is mm/dd/yyyy
 }
 
 main = async () => {
-    await ExcelStreamer.readToJson(filename, options, (obj, rowCtr, sheetName, headerLength, dataLength) => {
-        console.log(obj, rowCtr, sheetName, dataLength, headerLength);
+    await ExcelStreamer.readToJson(filename, options, (err, data) => {
+        console.log(data.row, data.rowCtr, data.sheetName, data.dataLength, data.headerLength);
         // ToDo: add your transform and load steps for each Excel row here
     });
     console.log("** Done **");
@@ -57,6 +60,15 @@ main = async () => {
 
 main()
 ````
+
+## BREAKING CHANGE
+We are now returning the standard `(error, data)`, instead of returning multiple parameters: `obj, rowCtr, sheetName, headerLength, dataLength`.  And access them this way:
+ - data.row
+ - data.rowCtr
+ - data.sheetName
+ - data.headerLength 
+ - data.dataLength
+
 
 ## Exceptions
 

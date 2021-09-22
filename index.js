@@ -7,6 +7,7 @@ let DATA_START_ROW=1;
 let INCLUDE_EMPTY=false;
 let SHEETS=[];
 let ASYNC_BATCH_SIZE=1;
+let READ_OPTIONS = { } // dateFormat: 'm/d/yy;@' // mm/dd/yyyy
 
 readToJson = (filename, options, cb) =>{
     return new Promise(async (resolve, reject) => {
@@ -22,6 +23,7 @@ readToJson = (filename, options, cb) =>{
             INCLUDE_EMPTY = options.INCLUDE_EMPTY ?? INCLUDE_EMPTY;
             ASYNC_BATCH_SIZE = options.ASYNC_BATCH_SIZE ?? ASYNC_BATCH_SIZE;
             SHEETS = options.SHEETS ?? SHEETS;
+            READ_OPTIONS = options.READ_OPTIONS ?? READ_OPTIONS;
         }
         let emptyRowCtr = 0;
         if (!SHEETS || !SHEETS.length) {
@@ -31,8 +33,8 @@ readToJson = (filename, options, cb) =>{
         }
         for(let i=0;i<SHEETS.length;i++) {
             const sheetName = SHEETS[i];
-            console.log("Sheet#"+i, sheetName);
-            await readSheet(filename, sheetName, emptyRowCtr, cb, resolve);
+            // console.log("Sheet#"+i, sheetName);
+            await readSheet(filename, sheetName, emptyRowCtr, READ_OPTIONS, cb);
         }
         resolve();
     });
@@ -40,60 +42,69 @@ readToJson = (filename, options, cb) =>{
 
 module.exports = { readToJson };
 
-function readSheet(filename, sheetName, emptyRowCtr, cb, resolve) {
-    return new Promise((resolve, reject) => {
-        let options = { };
+function readSheet(filename, sheetName, emptyRowCtr, options, cb) {
+    return new Promise(async (resolve, reject) => {
         if (sheetName && sheetName.length) {
             options['sheet'] = sheetName;
         }
-        xlsxFile(filename, options).then(async (rows) => {
-            const headers = rows[HEADER_ROW];
-            let promises = [];
-            for (let i = 1; i < rows.length; i++) {
-                if (i >= DATA_START_ROW) {
-                    const row = rows[i];
-                    let isEmpty = true;
-                    const obj = {};
-                    for (let c = 0; c < row.length; c++) {
-                        const col = row[c];
-                        if (col && col.length) {
-                            isEmpty = false;
-                            obj[headers[c]] = col;
-                        } else if (DEFAULT_VALUE != null) {
-                            obj[headers[c]] = DEFAULT_VALUE;
+        try {
+            await xlsxFile(filename, options).then(async (rows) => {
+                const headers = rows[HEADER_ROW];
+                let promises = [];
+                for (let i = 1; i < rows.length; i++) {
+                    if (i >= DATA_START_ROW) {
+                        const row = rows[i];
+                        let isEmpty = true;
+                        const obj = {};
+                        for (let c = 0; c < row.length; c++) {
+                            const col = row[c];
+                            if (col) {
+                                isEmpty = false;
+                                obj[headers[c]] = col;
+                            } else if (DEFAULT_VALUE != null) {
+                                obj[headers[c]] = DEFAULT_VALUE;
+                            }
                         }
-                    }
-                    if (isEmpty) {
-                        emptyRowCtr += 1;
-                        console.log(i, isEmpty, row.length, headers.length, "Empty row detected");
-                        if (emptyRowCtr >= MAX_EMPTY_SEQUENTIAL_ROWS) {
-                            // console.log("Done");
-                            break;
-                        }
-                        if (INCLUDE_EMPTY) {
-                            promises.push(cb(obj, i, sheetName, headers.length, row.length));
+                        if (isEmpty) {
+                            emptyRowCtr += 1;
+                            // console.log(i, isEmpty, row.length, headers.length, "Empty row detected");
+                            if (emptyRowCtr >= MAX_EMPTY_SEQUENTIAL_ROWS) {
+                                // console.log("Done");
+                                break;
+                            }
+                            if (INCLUDE_EMPTY) {
+                                promises.push(cb(null, {row:obj, rowCtr:i, sheetName, dataLength:headers.length, headerLength:row.length}));
+                                if (promises.length>= ASYNC_BATCH_SIZE) {
+                                    await Promise.all(promises);
+                                    promises = [];
+                                }
+                            }
+                        } else {
+                            emptyRowCtr = 0;
+                            // console.log(i, isEmpty, row.length, headers.length, obj);
+                            promises.push(cb(null, {row:obj, rowCtr:i, sheetName, dataLength:headers.length, headerLength:row.length}));
                             if (promises.length>= ASYNC_BATCH_SIZE) {
                                 await Promise.all(promises);
                                 promises = [];
                             }
-                        }
-                    } else {
-                        emptyRowCtr = 0;
-                        console.log(i, isEmpty, row.length, headers.length, obj);
-                        promises.push(cb(obj, i, sheetName, headers.length, row.length));
-                        if (promises.length>= ASYNC_BATCH_SIZE) {
-                            await Promise.all(promises);
-                            promises = [];
-                        }
+                    }
+                    }
                 }
+                if (promises.length>= 0) {
+                    await Promise.all(promises);
+                    promises = [];
                 }
+                resolve();
+            });
+        } catch (ex) {
+            const str = ex.toString();
+            if (str.indexOf('Error: Sheet') > -1 && str.indexOf('not found in the') > -1) {
+                console.log("Ignoring missing sheet");
+            } else {
+                console.log('********', ex.toString());
             }
-            if (promises.length>= 0) {
-                await Promise.all(promises);
-                promises = [];
-            }
-            resolve();
-        });
+        }
+        resolve();
     });
 }
 
