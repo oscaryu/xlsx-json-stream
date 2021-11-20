@@ -1,4 +1,5 @@
 const xlsxFile = require('read-excel-file/node');
+const { parseExcelDate } = require('read-excel-file');
 
 let MAX_EMPTY_SEQUENTIAL_ROWS = 2;
 let DEFAULT_VALUE='';
@@ -15,7 +16,7 @@ readToJson = (filename, options, cb) =>{
             cb = options;
             console.log("No options", cb)
         } else {
-            console.log("Options got passed")
+            console.log("Options got passed", options)
             MAX_EMPTY_SEQUENTIAL_ROWS = options.MAX_EMPTY_SEQUENTIAL_ROWS ?? MAX_EMPTY_SEQUENTIAL_ROWS;
             DEFAULT_VALUE = options.DEFAULT_VALUE ?? DEFAULT_VALUE;
             HEADER_ROW = options.HEADER_ROW ?? HEADER_ROW;
@@ -58,11 +59,20 @@ function readSheet(filename, sheetName, emptyRowCtr, options, cb) {
                         const obj = {};
                         for (let c = 0; c < row.length; c++) {
                             const col = row[c];
+                            const hdr = headers[c];
                             if (col) {
                                 isEmpty = false;
-                                obj[headers[c]] = col;
+                                if(typeof col == 'number' && options.DATE_FIELD_LIST && options.DATE_FIELD_LIST.length && options.DATE_FIELD_LIST.includes(hdr)) {
+                                    try {
+                                        obj[hdr] = parseExcelDate(col).toISOString();
+                                    } catch (ex) {
+                                        obj[hdr] = col;
+                                    }
+                                } else {
+                                    obj[hdr] = col;
+                                }
                             } else if (DEFAULT_VALUE != null) {
-                                obj[headers[c]] = DEFAULT_VALUE;
+                                obj[hdr] = DEFAULT_VALUE;
                             }
                         }
                         if (isEmpty) {
