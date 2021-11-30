@@ -33,7 +33,8 @@ main()
 - SHEETS = [];
 - ASYNC_BATCH_SIZE = 1;
 - READ_OPTIONS = { dateFormat: 'm/d/yy;@' }; // Default date format is mm/dd/yyyy
-
+- DATE_FIELD_LIST = ['Column Header 1', 'Arrival Date']; // force numbers to date
+- IS_LOCAL_DATES = false; // remove the 'Z' at the end of the ISO string to 'treat it like a local' date
 
 
 ````

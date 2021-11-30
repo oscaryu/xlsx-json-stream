@@ -25,6 +25,8 @@ readToJson = (filename, options, cb) =>{
             ASYNC_BATCH_SIZE = options.ASYNC_BATCH_SIZE ?? ASYNC_BATCH_SIZE;
             SHEETS = options.SHEETS ?? SHEETS;
             READ_OPTIONS = options.READ_OPTIONS ?? READ_OPTIONS;
+            DATE_FIELD_LIST = options.DATE_FIELD_LIST ?? [];
+            IS_LOCAL_DATES = options.IS_LOCAL_DATES ?? false;
         }
         let emptyRowCtr = 0;
         if (!SHEETS || !SHEETS.length) {
@@ -35,7 +37,7 @@ readToJson = (filename, options, cb) =>{
         for(let i=0;i<SHEETS.length;i++) {
             const sheetName = SHEETS[i];
             // console.log("Sheet#"+i, sheetName);
-            await readSheet(filename, sheetName, emptyRowCtr, READ_OPTIONS, options.DATE_FIELD_LIST, cb);
+            await readSheet(filename, sheetName, emptyRowCtr, READ_OPTIONS, options.DATE_FIELD_LIST, IS_LOCAL_DATES, cb);
         }
         resolve();
     });
@@ -43,7 +45,7 @@ readToJson = (filename, options, cb) =>{
 
 module.exports = { readToJson };
 
-function readSheet(filename, sheetName, emptyRowCtr, options, DATE_FIELD_LIST, cb) {
+function readSheet(filename, sheetName, emptyRowCtr, options, DATE_FIELD_LIST, IS_LOCAL_DATES, cb) {
     return new Promise(async (resolve, reject) => {
         if (sheetName && sheetName.length) {
             options['sheet'] = sheetName;
@@ -64,7 +66,11 @@ function readSheet(filename, sheetName, emptyRowCtr, options, DATE_FIELD_LIST, c
                                 isEmpty = false;
                                 if(typeof col == 'number' && DATE_FIELD_LIST && DATE_FIELD_LIST.length && DATE_FIELD_LIST.includes(hdr)) {
                                     try {
-                                        obj[hdr] = parseExcelDate(col).toISOString();
+                                        if (IS_LOCAL_DATES) {
+                                            obj[hdr] = parseExcelDate(col).toISOString().replace('Z', '');
+                                        } else {
+                                            obj[hdr] = parseExcelDate(col).toISOString();
+                                        }
                                         // console.log(hdr,":", col,typeof col, 'Is a Date Field:', DATE_FIELD_LIST && DATE_FIELD_LIST.length && DATE_FIELD_LIST.includes(hdr), '; Parsed:', obj[hdr])
                                     } catch (ex) {
                                         // console.log(hdr,":", col, 'Unable to parse', ex.toString())
