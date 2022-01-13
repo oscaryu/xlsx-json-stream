@@ -121,7 +121,6 @@ function readSheet(worksheet, sheetName, options, IS_LOCAL_DATES, cb) {
                 }
                 if (emptyRowCtr>= MAX_EMPTY_SEQUENTIAL_ROWS) {
                     // console.log("BREAKING!!!", i, emptyRowCtr, MAX_EMPTY_SEQUENTIAL_ROWS)
-                    resolve();
                     break;
                 }
             }
@@ -133,7 +132,7 @@ function readSheet(worksheet, sheetName, options, IS_LOCAL_DATES, cb) {
             if (str.indexOf('Error: Sheet') > -1 && str.indexOf('not found in the') > -1) {
                 console.log("Ignoring missing sheet");
             } else {
-                console.log('********', ex.toString());
+                console.log('********', ex.toString(), ex);
             }
         }
 
