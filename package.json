@@ -1,6 +1,6 @@
 {
   "name": "xlsx-json-stream",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "A memory friendly JSON row streamer for Excel (XLSX) files",
   "main": "index.js",
   "scripts": {
@@ -24,6 +24,6 @@
   },
   "homepage": "https://github.com/oscaryu/xlsx-json-stream#readme",
   "dependencies": {
-    "read-excel-file": "^5.2.10"
+    "read-excel-file": "^5.2.25"
   }
 }
