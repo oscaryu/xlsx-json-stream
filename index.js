@@ -11,7 +11,7 @@ let INCLUDE_EMPTY=false;
 let SHEETS=[];
 let ASYNC_BATCH_SIZE=1;
 let READ_OPTIONS = { } // dateFormat: 'm/d/yy;@' // mm/dd/yyyy
-let IS_LOCAL_DATES = true;
+let IS_LOCAL_DATES = false;
 
 readToJson = (filename, options, cb) =>{
     return new Promise(async (resolve, reject) => {
@@ -28,7 +28,7 @@ readToJson = (filename, options, cb) =>{
             ASYNC_BATCH_SIZE = options.ASYNC_BATCH_SIZE ?? ASYNC_BATCH_SIZE;
             SHEETS = options.SHEETS ?? SHEETS;
             READ_OPTIONS = options.READ_OPTIONS ?? READ_OPTIONS;
-            IS_LOCAL_DATES = options.IS_LOCAL_DATES ?? false;
+            IS_LOCAL_DATES = READ_OPTIONS.IS_LOCAL_DATES ?? IS_LOCAL_DATES;
         }
         let emptyRowCtr = 0;
         /* equivalent to `var wb = XLSX.readFile(filename);` */
@@ -77,15 +77,17 @@ function readSheet(worksheet, sheetName, options, IS_LOCAL_DATES, cb) {
                             isEmptyRow = false;
                             // console.log(i, 'is not empty')
                             row[hdr] = cell_value.v;
-                            console.log('cell_value', cell_value); // { t: 'n', v: 44373, w: '6/26/21' }
-                            if (cell_value.t === 'n' && (occurrenceCount(cell_value.w, '/') === 2 || occurrenceCount(cell_value.w, '.') === 2 || occurrenceCount(cell_value.w, ':') === 2)) {
+                            console.log('cell_value', occurrenceCount(cell_value.w, '/'), cell_value); // { t: 'n', v: 44373, w: '6/26/21' }
+                            if (cell_value.t === 'n' && (occurrenceCount(cell_value.w, '/') === 2 || occurrenceCount(cell_value.w, '-') === 2 || occurrenceCount(cell_value.w, '.') === 2 || occurrenceCount(cell_value.w, ':') === 2)) {
                                 try {
                                     const parsed = parseExcelDate(cell_value.v).toISOString();
-                                    console.log(i, hdr, parsed, cell_value.w);
+                                    console.log(i, IS_LOCAL_DATES, hdr, parsed, cell_value.w);
                                     if (IS_LOCAL_DATES) {
                                         row[hdr] = parsed.replace('Z', '');
+                                        console.log("IS_LOCAL_DATES:", IS_LOCAL_DATES, row[hdr], parsed)
                                     } else {
                                         row[hdr] = parsed;
+                                        console.log("IS_LOCAL_DATES=", IS_LOCAL_DATES, row[hdr], parsed)
                                     }
                                     // console.log(hdr,":", col,typeof col, 'Is a Date Field:', DATE_FIELD_LIST && DATE_FIELD_LIST.length && DATE_FIELD_LIST.includes(hdr), '; Parsed:', obj[hdr])
                                 } catch (ex) {
@@ -141,14 +143,24 @@ function readSheet(worksheet, sheetName, options, IS_LOCAL_DATES, cb) {
 }
 
 function getHeaderList(worksheet, lineNbr) {
-    let keys = Object.keys(worksheet);
-    let headerList = {};
-    let headers = keys.filter(x=>x.replace(/[A-Z]/gmi,"")==lineNbr);
-    headers.forEach(x=>{
-        const desired_cell = worksheet[x];
-        headerList[x] = desired_cell
-    })
-    return headerList;
+    if (worksheet) {
+        try {
+            let keys = Object.keys(worksheet);
+            let headerList = {};
+            console.log("The keys",keys);
+            let headers = keys.filter(x=>x.replace(/[A-Z]/gmi,"")==lineNbr);
+            headers.forEach(x=>{
+                const desired_cell = worksheet[x];
+                headerList[x] = desired_cell
+            })
+            return headerList;
+        } catch (ex) {
+            console.log('getHeaderList exception', ex);
+            return [];
+        }
+    } else {
+        return [];
+    }
 }
 
 function getCellValue(address_of_cell, worksheet) {

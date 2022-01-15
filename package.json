@@ -1,6 +1,6 @@
 {
   "name": "xlsx-json-stream",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "A memory friendly JSON row streamer for Excel (XLSX) files",
   "main": "index.js",
   "scripts": {
